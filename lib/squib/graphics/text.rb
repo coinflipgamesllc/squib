@@ -99,6 +99,12 @@ module Squib
       layout.context.set_shape_renderer do |cxt, att, do_path|
         unless do_path # when stroking the text
           rule = att.data
+          fingerprint, details = embed_fingerprint(rule, range, att)
+          if Squib::Watch::RenderRegistry.skip?(:text_embed, @index, fingerprint, details)
+            cxt.reset_clip
+            next [cxt, att, do_path]
+          end
+
           x = Pango.pixels(layout.index_to_pos(att.start_index).x) +
               rule[:adjust].dx[@index]
           y = Pango.pixels(layout.index_to_pos(att.start_index).y) +
@@ -108,6 +114,45 @@ module Squib
           cxt.reset_clip
           [cxt, att, do_path]
         end
+
+    def embed_fingerprint(rule, range, att)
+      info = {
+        key: rule[:key],
+        file: rule[:file][@index].file,
+        svg_data: rule[:svg_args] ? rule[:svg_args].data[@index] : nil,
+        type: rule[:type],
+        range: [range.first, range.last],
+        adjust_dx: rule[:adjust].dx[@index],
+        adjust_dy: rule[:adjust].dy[@index],
+        box_width: rule[:box].width[@index],
+        box_height: rule[:box].height[@index],
+        att_start: att.start_index,
+        att_end: att.end_index
+      }
+      if info[:file] && File.exist?(info[:file])
+        info[:file_mtime] = File.mtime(info[:file]).to_i
+      end
+      serialized = Marshal.dump(info.transform_values { |v| safe_dump(v) })
+      [Digest::SHA256.hexdigest(serialized), info]
+    rescue TypeError
+      digest = Digest::SHA256.hexdigest(info.inspect)
+      [digest, info]
+    end
+
+    def safe_dump(obj)
+      case obj
+      when NilClass, Numeric, String, Symbol, TrueClass, FalseClass
+        obj
+      else
+        if obj.respond_to?(:to_h)
+          obj.to_h.transform_values { |v| safe_dump(v) }
+        elsif obj.respond_to?(:to_a)
+          obj.to_a.map { |v| safe_dump(v) }
+        else
+          obj.to_s
+        end
+      end
+    end
       end
     end
 
