@@ -1,3 +1,5 @@
+require 'set'
+
 module Squib
 
   # Cache all pngs we've already loaded
@@ -69,7 +71,13 @@ module Squib
     # :nodoc:
     # @api private
     def warn_png_scale(file, scale_width, scale_height)
-      if @deck.conf.warn_png_scale? && (scale_width > 1.0 || scale_height > 1.0)
+      return unless @deck.conf.warn_png_scale?
+      return unless (scale_width > 1.0 || scale_height > 1.0)
+
+      warned = @deck.instance_variable_get(:@warned_png_scale) || Set.new
+      unless warned.include?(file)
+        warned.add(file)
+        @deck.instance_variable_set(:@warned_png_scale, warned)
         Squib.logger.warn "PNG is being upscaled - antialiasing could result: #{file}"
       end
     end
