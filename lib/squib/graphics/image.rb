@@ -80,9 +80,14 @@ module Squib
       Squib.logger.debug {"Rendering: #{file}, id: #{id} @#{x},#{y} #{width}x#{height}, alpha: #{alpha}, blend: #{blend}, angle: #{angle}, mask: #{mask}"}
       Squib.logger.warn 'Both an SVG file and SVG data were specified' unless file.to_s.empty? || svg_args.data.to_s.empty?
       return if (file.nil? or file.eql? '') and svg_args.data.nil? # nothing specified TODO Move this out to arg validator
-      svg_args.data = File.read(file) if svg_args.data.to_s.empty?
       begin
-        svg = Rsvg::Handle.new_from_data(svg_args.data)
+        svg = if svg_args.data.to_s.empty?
+                data = Squib.asset_cache.fetch_binary(file)
+                svg_args.data = data
+                Squib.asset_cache.fetch_svg(path: file) { Rsvg::Handle.new_from_data(data) }
+              else
+                Squib.asset_cache.fetch_svg(data: svg_args.data)
+              end
       rescue Rsvg::Error::Failed
         Squib.logger.error "Invalid SVG data. Is '#{file}' a valid svg file?"
         return

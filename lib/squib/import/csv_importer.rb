@@ -5,7 +5,11 @@ module Squib::Import
   class CsvImporter
     include Squib::Import::QuantityExploder
     def import_to_dataframe(import, csv_opts, &block)
-      data = import.data.nil? ? File.read(import.file) : import.data
+      data = if import.data.nil?
+               Squib.asset_cache.fetch_text(import.file)
+             else
+               Squib.asset_cache.fetch_string(:csv_data, import.data.to_s)
+             end
       table = CSV.parse(data, **csv_opts.to_hash)
       check_duplicate_csv_headers(table)
       hash = Squib::DataFrame.new

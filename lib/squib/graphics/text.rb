@@ -66,8 +66,12 @@ module Squib
             Squib.logger.warn 'Both an SVG file and SVG data were specified'
           end
           return 0 if (file.nil? or file.eql? '') and svg_data.nil?
-          svg_data = File.read(file) if svg_data.to_s.empty?
-          RSVG::Handle.new_from_data(svg_data).width
+          svg = if svg_data.to_s.empty?
+                  Squib.asset_cache.fetch_svg(path: file)
+                else
+                  Squib.asset_cache.fetch_svg(data: svg_data)
+                end
+          svg.width
         end
       else
         rule[:box].width[@index] * Pango::SCALE / (range.size - 1)

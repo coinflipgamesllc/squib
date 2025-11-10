@@ -5,7 +5,9 @@ module Squib::Import
   class XlsxImporter
     include Squib::Import::QuantityExploder
     def import_to_dataframe(import, &block)
-      s = Roo::Excelx.new(import.file)
+      path = File.expand_path(import.file)
+      version = File.exist?(path) ? File.mtime(path).to_f : 0
+      s = Squib.asset_cache.fetch([:xlsx, path], version: version) { Roo::Excelx.new(import.file) }
       s.default_sheet = s.sheets[import.sheet]
       data = Squib::DataFrame.new
       s.first_column.upto(s.last_column) do |col|

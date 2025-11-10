@@ -1,4 +1,5 @@
 require 'thread'
+require 'digest'
 
 module Squib
   module AssetCache
@@ -33,6 +34,40 @@ module Squib
       def fetch_png(path, &loader)
         loader ||= proc { Squib.open_png(path) }
         fetch(path, &loader)
+      end
+
+      def fetch_svg(path: nil, data: nil, &loader)
+        if data && (path.nil? || path.to_s.empty?)
+          key = [:svg_data, Digest::SHA256.hexdigest(data)]
+          loader ||= proc { Rsvg::Handle.new_from_data(data) }
+          fetch(key, version: 0, &loader)
+        elsif path
+          loader ||= proc { Rsvg::Handle.new_from_data(File.binread(path)) }
+          fetch(path, &loader)
+        else
+          raise ArgumentError, 'either path or data required'
+        end
+      end
+
+      def fetch_text(path, &loader)
+        loader ||= proc { File.read(path, mode: 'r:UTF-8') }
+        key = [:text, File.expand_path(path)]
+        version = compute_version(path) || 0
+        fetch(key, version: version, &loader)
+      end
+
+      def fetch_binary(path, &loader)
+        loader ||= proc { File.binread(path) }
+        key = [:binary, File.expand_path(path)]
+        version = compute_version(path) || 0
+        fetch(key, version: version, &loader)
+      end
+
+      def fetch_string(key_prefix, string, &loader)
+        raise ArgumentError, 'string required' if string.nil?
+        key = [key_prefix, Digest::SHA256.hexdigest(string)]
+        loader ||= proc { string.dup }
+        fetch(key, version: 0, &loader)
       end
 
       def invalidate!(key = nil)
