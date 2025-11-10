@@ -34,6 +34,8 @@ RSpec.describe Squib::Watch::Server do
         expect(File.exist?(output_path)).to be(true)
         expect(listener).to have_received(:start)
         expect(listener).to have_received(:stop)
+        expect(logger_io.string).to include('Starting build')
+        expect(logger_io.string).to include('Build finished')
       end
     end
   end

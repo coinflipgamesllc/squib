@@ -13,6 +13,7 @@ module Squib
         @deck_path = File.expand_path(deck_path)
         @project_dir = options[:project_dir] ? File.expand_path(options[:project_dir]) : File.dirname(@deck_path)
         @logger = options[:logger] || Squib.logger
+        ensure_logger_level!
         @ignore_patterns = DEFAULT_IGNORE + Array(options[:ignore]).compact
         @listener = nil
         @running = false
@@ -65,6 +66,7 @@ module Squib
       def run_deck
         @running = true
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        log_info "Starting build: #{short_deck_path}"
         Dir.chdir(File.dirname(@deck_path)) do
           load @deck_path
         end
@@ -117,12 +119,22 @@ module Squib
         end
       end
 
+      def short_deck_path
+        shorten_paths([@deck_path]).first
+      end
+
       def log_info(message)
         @logger.info(message)
       end
 
       def log_error(message)
         @logger.error(message)
+      end
+
+      def ensure_logger_level!
+        return unless @logger.respond_to?(:level) && @logger.respond_to?(:level=)
+
+        @logger.level = ::Logger::INFO if @logger.level > ::Logger::INFO
       end
     end
   end
