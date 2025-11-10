@@ -24,6 +24,7 @@ Contents:
    build_groups
    sprues
    help
+   guides/performance
    cli/index.rst
    dsl/index.rst
 
