@@ -5,8 +5,7 @@ module Squib
   # :nodoc:
   # @api private
   def cache_load_image(file)
-    @img_cache ||= {}
-    @img_cache[file] ||= open_png file
+    asset_cache.fetch_png(file) { open_png(file) }
   end
   module_function :cache_load_image
 
