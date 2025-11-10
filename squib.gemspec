@@ -48,6 +48,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'roo',                   '~> 2.10'             # https://rubygems.org/gems/roo
   spec.add_runtime_dependency 'rsvg2',                 '~> 4.2'   # https://rubygems.org/gems/rsvg2
   spec.add_runtime_dependency 'ruby-progressbar',      '~> 1.11'            # https://rubygems.org/gems/ruby-progressbar
+  spec.add_runtime_dependency 'listen',                '~> 3.8'
 
   spec.add_development_dependency 'activesupport'
   spec.add_development_dependency 'bundler'

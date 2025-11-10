@@ -1,6 +1,7 @@
 require 'mercenary'
 require_relative 'make_sprue'
 require_relative 'new'
+require_relative 'watch'
 
 module Squib
   class CLI
@@ -29,6 +30,23 @@ module Squib
 
           c.action do |args, options|
             Squib::Commands::MakeSprue.new.process(args)
+          end
+        end
+
+        p.command(:watch) do |c|
+          c.syntax 'watch DECK_FILE [options]'
+          c.description 'Runs a deck in persistent watch mode, rebuilding on file changes.'
+
+          c.option 'dir', '--dir DIR', 'Root directory to watch (defaults to the deck file directory)'
+          c.option 'ignore', '--ignore REGEX', 'Additional ignore pattern (regex). Can be supplied multiple times.'
+
+          c.action do |args, options|
+            begin
+              Squib::Commands::Watch.new.process(args, options)
+            rescue ArgumentError => e
+              Squib.logger.error(e.message)
+              exit 1
+            end
           end
         end
 

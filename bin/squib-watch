@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'squib'
+require 'squib/commands/watch'
+
+Squib::Commands::Watch.run_from_argv(ARGV)
+
