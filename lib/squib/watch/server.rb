@@ -1,3 +1,5 @@
+require_relative 'render_registry'
+
 module Squib
   module Watch
     class Server
@@ -67,8 +69,10 @@ module Squib
         @running = true
         start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         log_info "Starting build: #{short_deck_path}"
-        Dir.chdir(File.dirname(@deck_path)) do
-          load @deck_path
+        Watch::RenderRegistry.with_session(@deck_path) do
+          Dir.chdir(File.dirname(@deck_path)) do
+            load @deck_path
+          end
         end
         elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time
         log_info format('Build finished in %.2fs', elapsed)
