@@ -9,6 +9,7 @@ require_relative 'graphics/hand'
 require_relative 'graphics/showcase'
 require_relative 'layout_parser'
 require_relative 'progress'
+require_relative 'watch/deck_cache'
 
 
 # The project module
@@ -68,12 +69,20 @@ module Squib
       show_info(config, layout)
       @width         = Args::UnitConversion.parse width, dpi, @cell_px
       @height        = Args::UnitConversion.parse height, dpi, @cell_px
-      cards.times{ |i| @cards << Squib::Card.new(self, @width, @height, i) }
+      previous_surfaces = Squib::Watch::DeckCache.previous_surfaces
+      cards.times do |i|
+        surface = previous_surfaces[i]
+        if surface && (surface.width != @width || surface.height != @height)
+          surface = nil
+        end
+        @cards << Squib::Card.new(self, @width, @height, i, surface: surface)
+      end
       @layout = LayoutParser.new(dpi, @cell_px).load_layout(layout)
       enable_groups_from_env!
       if block_given?
         instance_eval(&block) # here we go. wheeeee!
       end
+      Squib::Watch::DeckCache.register(@cards) if Squib::Watch::DeckCache.active?
       @cards.each { |c| c.finish! }
     end
 

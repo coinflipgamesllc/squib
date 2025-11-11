@@ -15,16 +15,17 @@ module Squib
 
     # :nodoc:
     # @api private
-    def initialize(deck, width, height, index=-1)
+    def initialize(deck, width, height, index=-1, surface: nil)
       @deck          = deck
       @width         = width
       @height        = height
       @backend       = deck.backend
       @index         = index
       @svgfile       = "#{deck.dir}/#{deck.prefix}#{deck.count_format % index}.svg"
-      @cairo_surface = make_surface(@svgfile, @backend)
+      @cairo_surface = surface || make_surface(@svgfile, @backend)
       @cairo_context = Squib::Graphics::CairoContextWrapper.new(Cairo::Context.new(@cairo_surface))
       @cairo_context.antialias = deck.antialias
+      @needs_clear = true
     end
 
     # :nodoc:
@@ -46,6 +47,7 @@ module Squib
   # :nodoc:
   # @api private
     def use_cairo(&block)
+      prepare_surface!
       @cairo_context.save
       @cairo_context.new_path # see bug 248
       block.yield(@cairo_context)
@@ -53,11 +55,29 @@ module Squib
     end
 
     def finish!
+      return if defined?(Squib::Watch::DeckCache) && Squib::Watch::DeckCache.active?
+
       begin
         @cairo_surface.finish unless @backend.to_sym == :svg
       rescue Cairo::SurfaceFinishedError
         # do nothin - if it's already finished that's fine
       end
+    end
+
+    def snapshot_surface
+      @cairo_surface
+    end
+
+    private
+
+    def prepare_surface!
+      return unless @needs_clear
+
+      @cairo_context.save
+      @cairo_context.operator = :clear
+      @cairo_context.paint(1.0)
+      @cairo_context.restore
+      @needs_clear = false
     end
 
     ########################

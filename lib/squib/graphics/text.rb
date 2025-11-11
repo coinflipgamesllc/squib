@@ -1,4 +1,5 @@
 require 'pango'
+require 'digest'
 require_relative '../args/typographer'
 require_relative 'embedding_utils'
 
